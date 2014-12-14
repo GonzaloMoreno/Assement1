@@ -1,0 +1,117 @@
+# Assesment 1 Reproducible Research
+## Author: Gonzalo Andrés Moreno
+
+
+### Loading and preprocessing the data
+```{r, echo=TRUE}
+setwd("D:/personal/data science/Reproducible Regression/Assesment1")
+df<-read.csv("activity.csv", header=TRUE)
+```
+
+### Calculating mean and median of steps taken by day: 
+
+An histogram of the steps is plotted  
+
+```{r, echo=TRUE}
+library(ggplot2)
+qplot(steps, data=df, geom="histogram", fill=..count..,  binwidth=30)
+
+```
+
+Now, mean and median of the steps are calculated  
+
+```{r, echo=TRUE}
+
+mean.s<-mean(df$steps, na.rm=TRUE)
+median.s<-median(df$steps, na.rm=TRUE)
+
+```
+The media is **`r mean.s`** and median es **`r median.s`**
+
+### Calculating the average daily activity pattron
+
+First at all, the data is organized and rounded  
+
+```{r, echo=TRUE}
+average.s<-aggregate(steps~interval, data=df, mean)
+average.s$steps<-round(average.s$steps,0)
+
+```
+
+When data are ready to be plotted we have a data.frame with **`r nrow(average.s)`** rows. We plotted the data:  
+```{r, echo=TRUE}
+
+qplot(interval,steps, data=average.s, geom="line")
+max.steps<-average.s[average.s$steps==max(average.s$steps),]
+max.steps$interval
+max.steps$steps
+
+```
+
+The interval **`r max.steps[,1]`** has the maximum amount of steps (**`r max.steps[,2]`**)   
+
+### Imputing missing values
+
+the rows of df with NA´s are selected and calculated
+
+```{r}
+na.s<- df[is.na(df$steps),]
+rows.na<-nrow(na.s)
+rows.na
+```
+
+the file has **`r rows.na`** rows in df. Now the Hmisc library is required to imput data.  Missing values are modified using the mean
+
+
+```{r}
+
+library(Hmisc)
+
+## mean is used to impute data
+
+imputed.df<-with(df, impute(df[,1],mean))
+new.df<-df
+new.df[,1]<-as.integer(imputed.df)
+
+
+```
+
+With the data imputed the histogram median and mean is calculated again
+
+An histogram of the steps is plotted  
+
+```{r, echo=TRUE}
+qplot(steps, data=new.df, geom="histogram", fill=..count..,  binwidth=30)
+
+```
+
+Now, the new mean and median of the steps are calculated  
+
+```{r, echo=TRUE}
+
+new.mean.s<-mean(new.df$steps)
+new.median.s<-median(new.df$steps)
+
+```
+The media is **`r new.mean.s`** and median es **`r new.median.s`**. Imputing data did not affect the original media and mean.
+
+### discoveryng activity patterns between weekdays and weekends 
+
+Data is classified in weekday and weekend. Then steps are averaged
+
+```{r,echo=TRUE}
+library(timeDate)
+new.df$weekday<-isWeekday(as.Date(new.df$date))
+new.df[new.df$weekday==TRUE,4]<-"Weekday"
+new.df[new.df$weekday==FALSE,4]<-"Weekend"
+new.df.average<-aggregate(steps~interval+weekday, data=new.df, mean)
+new.df.average$steps<-round(new.df.average$steps,0)
+
+qplot(interval,steps, data=new.df.average,facets= weekday~., colour=weekday, geom="line")
+
+
+```
+
+
+    
+
